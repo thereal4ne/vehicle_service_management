@@ -62,7 +62,7 @@ This application extends ERPNext to provide an end-to-end service workflow for a
 * **Controller Validations**:
   * **Ownership Check**: Ensures the selected vehicle belongs to the chosen customer.
   * **Past Date Prevention**: Prevents scheduling appointments in the past.
-  * **Conflict Prevention**: Prevents overlapping active bookings for the same vehicle at the same date/time.
+  * **Conflict Prevention**: Prevents scheduling another active booking for the same vehicle at the exact same date and time.
 
 ### 3. `Job Card Task` (Child Table DocType)
 * **Fields**:
@@ -78,14 +78,14 @@ This application extends ERPNext to provide an end-to-end service workflow for a
   * `vehicle` (`Link` -> `Customer Vehicle`, Read Only): Auto-fetched from booking.
   * `assigned_technician` (`Link` -> `User`): Technician assigned to work.
   * `tasks` (`Table` -> `Job Card Task`): Child table of tasks.
-  * `estimated_cost` (`Currency`, Read Only): Sum of all child task costs.
-  * `actual_cost` (`Currency`): Final billed cost.
+  * `estimated_cost` (`Currency`): Auto-calculated total from child table tasks.
+  * `actual_cost` (`Currency`): Final billed amount (auto-defaults to estimated cost).
   * `status` (`Select`): Open, In Progress, Completed, Cancelled.
   * `remarks` (`Small Text`): Work remarks.
-* **Controller Logic**:
-  * `calculate_estimated_cost()`: Automatically calculates the sum of all task costs.
+* **Controller & UI Logic**:
+  * `calculate_estimated_cost()`: Automatically calculates the sum of all task costs on save and live via Client Script.
   * `validate_task_completion()`: Blocks marking a Job Card as "Completed" if any child task is still "Pending" or "In Progress".
-  * `sync_booking_status()`: Lifecycle hook (`on_update`) that automatically updates the linked `Service Booking` to **Completed** when the Job Card is completed!
+  * `sync_booking_status()`: Lifecycle hook (`on_update`) that automatically updates the linked `Service Booking` to **Completed** when the Job Card is completed.
 
 ---
 
@@ -160,29 +160,31 @@ All custom APIs are defined in `vehicle_service_management/api/booking.py` using
 
 ## 5. Installation & Setup
 
-### Inside Frappe Bench:
-
+### Option A: Standard Frappe Bench
 ```bash
-# 1. Get the app (or clone repository into apps folder)
+# 1. Clone the app repository
 cd /path/to/frappe-bench
-bench get-app vehicle_service_management
+bench get-app https://github.com/thereal4ne/vehicle_service_management.git
 
-# 2. Install the app on your site
+# 2. Install the app onto your site
 bench --site [sitename] install-app vehicle_service_management
 
-# 3. Run migrations to sync DocTypes and permissions
+# 3. Run database migrations to sync DocTypes
 bench --site [sitename] migrate
 
 # 4. Clear cache
 bench --site [sitename] clear-cache
 ```
 
-### Docker (frappe_docker) Setup:
+### Option B: Docker Setup (frappe_docker)
 ```powershell
-# Copy repository into backend container
+# 1. Copy repository into backend container
 docker cp "vehicle_service_management" frappe_docker-backend-1:/home/frappe/frappe-bench/apps/
 
-# Run migration and cache clear
+# 2. Install app onto the site
+docker exec -it frappe_docker-backend-1 bench --site frontend install-app vehicle_service_management
+
+# 3. Run migration and clear cache
 docker exec -it frappe_docker-backend-1 bench --site frontend migrate
 docker exec -it frappe_docker-backend-1 bench --site frontend clear-cache
 ```
@@ -204,8 +206,8 @@ docker exec -it frappe_docker-backend-1 bench --site frontend clear-cache
    * Assign a `Technician` (User).
    * Add tasks to the Child Table:
      * Task 1: "Engine Oil Replacement", Cost: 2500, Status: `Completed`.
-     * Task 2: "Oil Filter Change", Cost: 600, Status: `Completed`.
-   * Notice **Estimated Cost** auto-calculates to `3100.00`!
+     * Task 2: "Oil Filter Change", Cost: 500, Status: `Completed`.
+   * Notice **Estimated Cost** and **Actual Cost** auto-calculate to `3000.00`!
    * Change Job Card status to `Completed` and Save.
 5. **Verify Automation**:
    * Open the linked `Service Booking` -> Notice its status is automatically updated to **`Completed`**!
@@ -216,6 +218,6 @@ docker exec -it frappe_docker-backend-1 bench --site frontend clear-cache
 
 1. Open Postman.
 2. Click **Import** -> Select `Vehicle_Service_Management.postman_collection.json`.
-3. Set collection variable `base_url` to `http://localhost:8080`.
-4. Run request `1. Authentication (Login)` to establish a session cookie.
-5. Run the requests in order to test creation, retrieval, updates, and validation error cases.
+3. Set the collection variable `base_url` to your server (e.g., `http://localhost:8080`).
+4. Run request `1. Authentication (Login)` with your admin credentials to establish the session.
+5. Execute the endpoints to test booking creation, retrieval, updates, and validation error cases.
