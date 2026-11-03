@@ -1,0 +1,284 @@
+{
+	"info": {
+		"_postman_id": "9b12d34e-7b56-4890-a212-321245678901",
+		"name": "Vehicle Service Management System",
+		"description": "API collection for Frappe/ERPNext Vehicle Service Management System.\nIncludes endpoints for creating bookings, retrieving booking details, updating status, and negative test cases.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "api_key",
+			"value": "your_api_key_here",
+			"type": "string"
+		},
+		{
+			"key": "api_secret",
+			"value": "your_api_secret_here",
+			"type": "string"
+		},
+		{
+			"key": "sample_booking_id",
+			"value": "SB-2026-00001",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication (Login)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"usr\": \"Administrator\",\n    \"pwd\": \"admin\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"login"
+					]
+				},
+				"description": "Logs in and receives a session cookie (sid) for session-based authentication."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Create Service Booking (Success)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"customer\": \"John Doe\",\n    \"vehicle\": \"KL-07-AB-1234\",\n    \"booking_date\": \"2026-11-05 10:30:00\",\n    \"service_type\": \"Periodic Maintenance\",\n    \"notes\": \"Regular 10,000 km general service and engine oil replacement\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.create_booking",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.create_booking"
+					]
+				},
+				"description": "Creates a new Service Booking. Triggers document lifecycle validation hooks (vehicle ownership check, past-date prevention, conflict check)."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Create Booking - Validation Error (Past Date)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"customer\": \"John Doe\",\n    \"vehicle\": \"KL-07-AB-1234\",\n    \"booking_date\": \"2020-01-01 10:00:00\",\n    \"service_type\": \"Periodic Maintenance\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.create_booking",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.create_booking"
+					]
+				},
+				"description": "Negative Test: Tests business logic rejecting bookings in the past."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Create Booking - Validation Error (Missing Fields)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"customer\": \"John Doe\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.create_booking",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.create_booking"
+					]
+				},
+				"description": "Negative Test: Rejects request when mandatory fields (vehicle, booking_date, service_type) are missing."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Get Booking Details (Success)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.get_booking?booking_id={{sample_booking_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.get_booking"
+					],
+					"query": [
+						{
+							"key": "booking_id",
+							"value": "{{sample_booking_id}}"
+						}
+					]
+				},
+				"description": "Fetches details of an existing service booking."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Get Booking Details - Not Found (404)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.get_booking?booking_id=NON-EXISTENT-BOOKING",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.get_booking"
+					],
+					"query": [
+						{
+							"key": "booking_id",
+							"value": "NON-EXISTENT-BOOKING"
+						}
+					]
+				},
+				"description": "Negative Test: Returns 404 / DoesNotExistError when booking_id is not in the database."
+			},
+			"response": []
+		},
+		{
+			"name": "7. Update Booking Status (Success)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"booking_id\": \"{{sample_booking_id}}\",\n    \"status\": \"Confirmed\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.update_booking_status",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.update_booking_status"
+					]
+				},
+				"description": "Updates the booking status (e.g. from Draft to Confirmed or In Progress)."
+			},
+			"response": []
+		},
+		{
+			"name": "8. Update Booking Status - Invalid Status (400)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"booking_id\": \"{{sample_booking_id}}\",\n    \"status\": \"InvalidStatus\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/method/vehicle_service_management.api.booking.update_booking_status",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"method",
+						"vehicle_service_management.api.booking.update_booking_status"
+					]
+				},
+				"description": "Negative Test: Rejects status transitions with unrecognized status values."
+			},
+			"response": []
+		},
+		{
+			"name": "9. Standard Frappe REST API - List Bookings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/resource/Service Booking?fields=[\"name\",\"customer\",\"vehicle\",\"booking_date\",\"status\"]",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"resource",
+						"Service Booking"
+					],
+					"query": [
+						{
+							"key": "fields",
+							"value": "[\"name\",\"customer\",\"vehicle\",\"booking_date\",\"status\"]"
+						}
+					]
+				},
+				"description": "Demonstrates built-in Frappe REST API capability for retrieving resources."
+			},
+			"response": []
+		}
+	]
+}
