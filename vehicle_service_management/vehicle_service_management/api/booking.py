@@ -3,7 +3,7 @@ import frappe
 
 # 1. API to create a booking
 @frappe.whitelist()
-def create_booking(customer, vehicle, booking_date, service_type, notes=None):
+def create_booking(customer=None, vehicle=None, booking_date=None, service_type=None, notes=None):
 	# Check mandatory parameters
 	if not customer or not vehicle or not booking_date or not service_type:
 		frappe.throw("Customer, vehicle, booking date, and service type are all required!")
@@ -27,7 +27,7 @@ def create_booking(customer, vehicle, booking_date, service_type, notes=None):
 
 # 2. API to get booking details
 @frappe.whitelist()
-def get_booking(booking_id):
+def get_booking(booking_id=None):
 	if not booking_id:
 		frappe.throw("Please provide a booking_id!")
 
@@ -41,7 +41,7 @@ def get_booking(booking_id):
 
 # 3. API to update booking status
 @frappe.whitelist()
-def update_booking_status(booking_id, status):
+def update_booking_status(booking_id=None, status=None):
 	if not booking_id or not status:
 		frappe.throw("Both booking_id and status are required!")
 
